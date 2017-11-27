@@ -1,0 +1,50 @@
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- http://garden.zendesk.com -->
+  <link rel="stylesheet" href="https://assets.zendesk.com/apps/sdk-assets/css/0/zendesk_garden.css" type="text/css">
+</head>
+<body>
+  <h2 class="u-gamma">Hello, World!</h2>
+  <!-- https://github.com/zendesk/zendesk_app_framework_sdk -->
+  <script type="text/javascript" src="https://assets.zendesk.com/apps/sdk/2.0/zaf_sdk.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+  <script>
+    // Initialise the Zendesk JavaScript API client
+    // https://developer.zendesk.com/apps/docs/apps-v2
+    var client = ZAFClient.init();
+    client.invoke('resize', { width: '100%', height: '200px' });
+    client.on('app.registered', init);
+    function init(){
+      var params = parseParams(window.location.hash); //We start the modal client, then parse any parameters in the url
+      var pc = getParentClient(params.parent_guid); //Hopefully this includes the parent_guid we want to send when creating modals
+      pc.get('ticket').then(function(ticket_data){console.log(ticket_data)});  //And like that we now have easy access to the parent ticket modal without guessing which instance the parent is from an array.. Winning!
+      client.context().then(create_modal);
+    };
+    function parseParams(param_string){
+      var param_sub = param_string.replace('#','').split('&');
+      var param_obj = _.reduce(param_sub, function(memo, k){
+        kv = k.split('=');
+        memo[kv[0]] = kv[1];
+        return memo;
+      }, {});
+      return param_obj;  //Might be overbuilt but I like it because it returns a very pretty object
+    };
+    function getParentClient(parent_guid) {  //Definitely redundant but w/e
+      return client.instance(parent_guid)
+    }
+        //When we create the modal we send the current client's guid as a hash parameter to the modal by adding it to the url
+    function create_modal(context){
+      var parent_guid = context.instanceGuid;
+      var options = {
+        location: "modal",
+        url: "assets/modal.html#parent_guid=" + parent_guid
+      }
+      client.invoke('instances.create', options)
+    };
+    function generate_modal_data(){
+    };
+  </script>
+</body>
+</html>
